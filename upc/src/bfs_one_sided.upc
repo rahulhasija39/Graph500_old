@@ -8,7 +8,7 @@
 /*           Andrew Lumsdaine                                              */
 
 #include "common.h"
-#include <mpi.h>
+#include <upc.h> //Kurt Rudolph <mpi.h>
 #include <stdint.h>
 #include <inttypes.h>
 #include <stdlib.h>
@@ -24,7 +24,8 @@
  * might get better performance from it.  This code might also be good to
  * translate to UPC, Co-array Fortran, SHMEM, or GASNet since those systems are
  * more designed for one-sided remote memory operations. */
-void run_mpi_bfs(const csr_graph* const g, int64_t root, int64_t* pred, int64_t* nvisited) {
+//Kurt Rudolph void run_mpi_bfs(const csr_graph* const g, int64_t root, int64_t* pred, int64_t* nvisited) {
+void run_upc_bfs(const csr_graph* const g, int64_t root, int64_t* pred, int64_t* nvisited) {
   const size_t nlocalverts = g->nlocalverts;//why verticies that are local to this task?
   const int64_t nglobalverts = g->nglobalverts; //total global verticies?  Is this including the verticies which are considered local to this this thread?
  
@@ -33,8 +34,9 @@ void run_mpi_bfs(const csr_graph* const g, int64_t root, int64_t* pred, int64_t*
   /* Set up a second predecessor map so we can read from one and modify the
    * other. */
   int64_t* orig_pred = pred;
-  int64_t* pred2 = (int64_t*)xMPI_Alloc_mem(nlocalverts * sizeof(int64_t));//why does this point to empty memroy?
 
+  int64_t* pred2 = (int64_t*)xUPC_Alloc_mem(nlocalverts * sizeof(int64_t));//why does this point to empty memroy?
+  //Kurt Rudolphint64_t* pred2 = (int64_t*)xMPI_Alloc_mem(nlocalverts * sizeof(int64_t));//why does this point to empty memroy?
   /* The queues (old and new) are represented as bitmaps.  Each bit in the
    * queue bitmap says to check elts_per_queue_bit elements in the predecessor
    * map for vertices that need to be visited.  In other words, the queue
@@ -47,13 +49,16 @@ void run_mpi_bfs(const csr_graph* const g, int64_t root, int64_t* pred, int64_t*
   const int ulong_bits = sizeof(unsigned long) * CHAR_BIT; //ulong_bits, u is a what??
   int64_t queue_nbits = (nlocalverts + elts_per_queue_bit - 1) / elts_per_queue_bit; //why is all I can really say?
   int64_t queue_nwords = (queue_nbits + ulong_bits - 1) / ulong_bits; //why again, why not just subtract by 1?
-  unsigned long* queue_bitmap1 = (unsigned long*)xMPI_Alloc_mem(queue_nwords * sizeof(unsigned long)); 
-  unsigned long* queue_bitmap2 = (unsigned long*)xMPI_Alloc_mem(queue_nwords * sizeof(unsigned long));
+  //Kurt Rudolph unsigned long* queue_bitmap1 = (unsigned long*)xMPI_Alloc_mem(queue_nwords * sizeof(unsigned long)); 
+  unsigned long* queue_bitmap1 = (unsigned long*)xUPC_Alloc_mem(queue_nwords * sizeof(unsigned long)); 
+  //Kurt Rudolph unsigned long* queue_bitmap2 = (unsigned long*)xMPI_Alloc_mem(queue_nwords * sizeof(unsigned long));
+  unsigned long* queue_bitmap2 = (unsigned long*)xUPC_Alloc_mem(queue_nwords * sizeof(unsigned long));
   memset(queue_bitmap1, 0, queue_nwords * sizeof(unsigned long));//why again only bitmap1?  
 
   /* List of local vertices (used as sources in MPI_Accumulate). */
-  int64_t* local_vertices = (int64_t*)xMPI_Alloc_mem(nlocalverts * sizeof(int64_t));  //Why does it store a pointer to this int64_t*
-  {size_t i; for (i = 0; i < nlocalverts; ++i) local_vertices[i] = VERTEX_TO_GLOBAL(i);}//why the brackets?
+ //Kurt Rudolph int64_t* local_vertices = (int64_t*)xMPI_Alloc_mem(nlocalverts * sizeof(int64_t));  //Why does it store a pointer to this int64_t*
+  int64_t* local_vertices = (int64_t*)xUPC_Alloc_mem(nlocalverts * sizeof(int64_t));  //Why does it store a pointer to this int64_t*
+	{size_t i; for (i = 0; i < nlocalverts; ++i) local_vertices[i] = VERTEX_TO_GLOBAL(i);}//why the brackets?
 
   /* List of all bit masks for an unsigned long (used as sources in
    * MPI_Accumulate). */
@@ -75,11 +80,11 @@ void run_mpi_bfs(const csr_graph* const g, int64_t root, int64_t* pred, int64_t*
   }
 
   /* Create MPI windows on the two predecessor arrays and the two queues. */
-  MPI_Win pred_win, pred2_win, queue1_win, queue2_win;
-  MPI_Win_create(pred, nlocalverts * sizeof(int64_t), sizeof(int64_t), MPI_INFO_NULL, MPI_COMM_WORLD, &pred_win);
-  MPI_Win_create(pred2, nlocalverts * sizeof(int64_t), sizeof(int64_t), MPI_INFO_NULL, MPI_COMM_WORLD, &pred2_win);
-  MPI_Win_create(queue_bitmap1, queue_nwords * sizeof(unsigned long), sizeof(unsigned long), MPI_INFO_NULL, MPI_COMM_WORLD, &queue1_win);
-  MPI_Win_create(queue_bitmap2, queue_nwords * sizeof(unsigned long), sizeof(unsigned long), MPI_INFO_NULL, MPI_COMM_WORLD, &queue2_win);
+  //Kurt Rudolph MPI_Win pred_win, pred2_win, queue1_win, queue2_win;
+  //Kurt Rudolph MPI_Win_create(pred, nlocalverts * sizeof(int64_t), sizeof(int64_t), MPI_INFO_NULL, MPI_COMM_WORLD, &pred_win);
+  //Kurt Rudolph MPI_Win_create(pred2, nlocalverts * sizeof(int64_t), sizeof(int64_t), MPI_INFO_NULL, MPI_COMM_WORLD, &pred2_win);
+  //Kurt Rudolph MPI_Win_create(queue_bitmap1, queue_nwords * sizeof(unsigned long), sizeof(unsigned long), MPI_INFO_NULL, MPI_COMM_WORLD, &queue1_win);
+  //Kurt Rudolph MPI_Win_create(queue_bitmap2, queue_nwords * sizeof(unsigned long), sizeof(unsigned long), MPI_INFO_NULL, MPI_COMM_WORLD, &queue2_win);
 
   while (1) {
     int64_t i;
@@ -93,8 +98,8 @@ void run_mpi_bfs(const csr_graph* const g, int64_t root, int64_t* pred, int64_t*
     }
 
     /* Start one-sided operations for this level. */
-    MPI_Win_fence(MPI_MODE_NOPRECEDE, pred2_win);
-    MPI_Win_fence(MPI_MODE_NOPRECEDE, queue2_win);
+    upc_barrier;    //Kurt Rudolph MPI_Win_fence(MPI_MODE_NOPRECEDE, pred2_win);
+    //Kurt Rudolph MPI_Win_fence(MPI_MODE_NOPRECEDE, queue2_win);
 
     /* Step through the words of the queue bitmap. */
     for (i = 0; i < queue_nwords; ++i) {
@@ -136,8 +141,8 @@ void run_mpi_bfs(const csr_graph* const g, int64_t root, int64_t* pred, int64_t*
       }
     }
     /* End one-sided operations. */
-    MPI_Win_fence(MPI_MODE_NOSUCCEED, queue2_win);
-    MPI_Win_fence(MPI_MODE_NOSUCCEED, pred2_win);
+ //Kurt Rudolph   MPI_Win_fence(MPI_MODE_NOSUCCEED, queue2_win);
+  //Kurt Rudolph  MPI_Win_fence(MPI_MODE_NOSUCCEED, pred2_win);
 
     /* Test if there are any elements in the next-level queue (globally); stop
      * if none. */
@@ -149,26 +154,27 @@ void run_mpi_bfs(const csr_graph* const g, int64_t root, int64_t* pred, int64_t*
     if (!any_set) break;
 
     /* Swap queues and predecessor maps. */
-    {MPI_Win temp = queue1_win; queue1_win = queue2_win; queue2_win = temp;}
+  //Kurt Rudolph  {MPI_Win temp = queue1_win; queue1_win = queue2_win; queue2_win = temp;}
     {unsigned long* temp = queue_bitmap1; queue_bitmap1 = queue_bitmap2; queue_bitmap2 = temp;}
-    {MPI_Win temp = pred_win; pred_win = pred2_win; pred2_win = temp;}
+//Kurt Rudolph   {MPI_Win temp = pred_win; pred_win = pred2_win; pred2_win = temp;}
     {int64_t* temp = pred; pred = pred2; pred2 = temp;}
   }
-  MPI_Win_free(&pred_win);
-  MPI_Win_free(&pred2_win);
-  MPI_Win_free(&queue1_win);
-  MPI_Win_free(&queue2_win);
-  MPI_Free_mem(local_vertices);
-  MPI_Free_mem(queue_bitmap1);
-  MPI_Free_mem(queue_bitmap2);
+ //Kurt Rudolph  MPI_Win_free(&pred_win);
+ //Kurt Rudolph  MPI_Win_free(&pred2_win);
+ //Kurt Rudolph  MPI_Win_free(&queue1_win);
+ //Kurt Rudolph  MPI_Win_free(&queue2_win);
+	 upc_free(local_vertices); //Kurt Rudolph  MPI_Free_mem(local_vertices);
+  
+	upc_free(queue_bitmap1);//Kurt Rudolph 	MPI_Free_mem(queue_bitmap1);
+  upc_free(queue_bitmap2); //Kurt Rudolph MPI_Free_mem(queue_bitmap2);
 
   /* Clean up the predecessor map swapping since the surrounding code does not
    * allow the BFS to change the predecessor map pointer. */
   if (pred2 != orig_pred) {
     memcpy(orig_pred, pred2, nlocalverts * sizeof(int64_t));
-    MPI_Free_mem(pred2);
+    upc_free(pred2); //Kurt Rudolph MPI_Free_mem(pred2);
   } else {
-    MPI_Free_mem(pred);
+   upc_free(pred); //Kurt Rudolph MPI_Free_mem(pred);
   }
 
   /* Change from special coding of predecessor map to the one the benchmark
@@ -183,6 +189,6 @@ void run_mpi_bfs(const csr_graph* const g, int64_t root, int64_t* pred, int64_t*
   }
 
   /* Count visited vertices. */
-  MPI_Allreduce(MPI_IN_PLACE, &nvisited_local, 1, INT64_T_MPI_TYPE, MPI_SUM, MPI_COMM_WORLD);
+  //Kurt Rudolph MPI_Allreduce(MPI_IN_PLACE, &nvisited_local, 1, INT64_T_MPI_TYPE, MPI_SUM, MPI_COMM_WORLD);
   *nvisited = nvisited_local;
 }
