@@ -1,61 +1,28 @@
-CC = upcc 
-CXX = upcc
-UPCC = upcc
-FLAGS = -I./src/headers -I./src -I./common
-LDFLAGS =
-CCFLAGS = -g
-CXXFLAGS = -g
-UPCCFLAGS = -g
+include ../make.inc
+MPICC ?= mpicc
 
-OBJECT_DIRECTORY := common/obj
-SOURCE_DIRECTORY := src
-DEMO_DIRECTORY := $(SOURCE_DIRECTORY)/demos
-TEST_DIRECTORY := $(SOURCE_DIRECTORY)/tests
-VPATH := $(OBJECT_DIRECTORY) $(SOURCE_DIRECTORY) $(DEMO_DIRECTORY) $(TEST_DIRECTORY)
+BIN = graph500_mpi_simple graph500_mpi_one_sided
 
-OBJECTS := $(patsubst $(SOURCE_DIRECTORY)/%.upc, $(OBJECT_DIRECTORY)/%.o, $(wildcard $(SOURCE_DIRECTORY)/*.upc))
-DEMO_OBJECTS := $(OBJECTS) $(patsubst $(DEMO_DIRECTORY)/%.upc, $(OBJECT_DIRECTORY)/%.o, $(wildcard $(DEMO_DIRECTORY)/*.upc))
-TEST_OBJECTS := $(OBJECTS) $(patsubst $(TEST_DIRECTORY)/%.upc, $(OBJECT_DIRECTORY)/%.o, $(wildcard $(TEST_DIRECTORY)/*.upc))
+ifeq ($(BUILD_MPI_CUSTOM), Yes)
+BIN += graph500_mpi_custom
+endif
 
-DEMO := demo
-TEST := test
+all:	$(BIN)
 
-# Similar for OPENCC_FLAGS and PTXAS_FLAGS. 
-# These are simply passed via the environment: 
- #
-export OPENCC_FLAGS :=
-export PTXAS_FLAGS  := -fastimul
-#
-# cuda and C/C++ compilation rules, with 
-# dependency generation: 
-#
-$(OBJECT_DIRECTORY)/%.o : %.cpp
-	$(CXX) -c $^ $(CXXFLAGS) $(FLAGS) -o $@ 
-	$(CXX) -M $^ $(CXXFLAGS) $(FLAGS) > $@.dep 
-$(OBJECT_DIRECTORY)/%.o : %.c
-	$(CC) -c $^ $(CCFLAGS) $(FLAGS) -o $@ 
-	$(CC) -M $^ $(CCFLAGS) $(FLAGS) > $@.dep 
-$(OBJECT_DIRECTORY)/%.o : %.upc
-	$(UPCC) -c $^ $(UPCCFLAGS) $(FLAGS) -o $@ 
-	$(UPCC) -M $^ $(UPCCFLAGS) $(FLAGS)  > $@.dep
-#
-# Pick up generated dependency files, and
-# add /dev/null because gmake does not consider 
-# an empty list to be a list: 
-#
-include  $(wildcard *.dep) /dev/null
-#
-# Define the application;  
-# for each object file, there must be a 
-# corresponding .c or .cpp or .cu file: 
-#
+GENLIB=../generator/libgraph_generator_mpi.a
 
-$(DEMO) : $(DEMO_OBJECTS)
-	$(UPCC) $(DEMO_OBJECTS) $(LDFLAGS) -o $@ 
+graph500_mpi_simple: main.c bfs_simple.c convert_to_csr.c find_roots.c utils.c validate.c $(GENLIB)
+	$(MPICC) $(CFLAGS) $(LDFLAGS) -o graph500_mpi_simple bfs_simple.c convert_to_csr.c find_roots.c main.c utils.c validate.c $(GENLIB) -lm
 
-$(TEST) : $(TEST_OBJECTS)
-	$(UPCC) $(TEST_OBJECTS) $(LDFLAGS) -o $@
+graph500_mpi_one_sided: main.c bfs_one_sided.c convert_to_csr.c find_roots.c utils.c validate.c $(GENLIB)
+	$(MPICC) $(CFLAGS) $(LDFLAGS) -o graph500_mpi_one_sided bfs_one_sided.c convert_to_csr.c find_roots.c main.c utils.c validate.c $(GENLIB) -lm
 
-clean :  
-	$(RM) $(DEMO_OBJECTS) $(TEST_OBJECTS) $(OBJECT_DIRECTORY)/*.dep $(DEMO) $(TEST) 
+graph500_mpi_custom: main.c bfs_custom.c convert_to_csr.c find_roots.c utils.c validate.c $(GENLIB)
+	$(MPICC) $(CFLAGS) $(LDFLAGS) -o graph500_mpi_custom bfs_custom.c convert_to_csr.c find_roots.c main.c utils.c validate.c $(GENLIB) -lm
 
+$(GENLIB):
+	$(MAKE) -C ../generator -f ../generator/Makefile.mpi
+
+clean:
+	-rm -f graph500_mpi_* *.o *.a
+	-$(MAKE) -C ../generator -f ../generator/Makefile.mpi clean
