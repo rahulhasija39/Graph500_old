@@ -35,8 +35,6 @@
 #include <inttypes.h>
 
 #pragma upc strict
-upc_op_t reduce_op = UPC_MIN;
-upc_flag_t sync_mode = UPC_IN_MYSYNC | UPC_OUT_MYSYNC;
 
 static int compare_doubles(const void* a, const void* b) {
   double aa = *(const double*)a;
@@ -75,6 +73,7 @@ static void get_statistics(const double x[], int n, double r[s_LAST]) {
 int main(int argc, char** argv) {
   //MPI_Init(&argc, &argv);// mpi runtime is activated
 
+upc_flag_t sync_mode = UPC_IN_MYSYNC | UPC_OUT_MYSYNC;
   setup_globals();
 
   /* Parse arguments. */
@@ -120,13 +119,13 @@ int main(int argc, char** argv) {
 
   /* Number of edges visited in each BFS; a double so get_statistics can be
    * used directly. */
-  double* edge_counts = (double*)xmalloc(num_bfs_roots * sizeof(double));
+  shared int64_t* edge_counts = (shared int64_t*)xUPC_Alloc_mem(num_bfs_roots * sizeof(int64_t));
 
   /* Run BFS. */
   int validation_passed = 1;
   double* bfs_times = (double*)xmalloc(num_bfs_roots * sizeof(double));
   double* validate_times = (double*)xmalloc(num_bfs_roots * sizeof(double));
-  int64_t* pred = (int64_t*)xUPC_Alloc_mem(g.nlocalverts * sizeof(int64_t));
+  shared int64_t* pred = (shared int64_t*)xUPC_Alloc_mem(g.nlocalverts * sizeof(int64_t));
 
   int bfs_root_idx;
   for (bfs_root_idx = 0; bfs_root_idx < num_bfs_roots; ++bfs_root_idx) {
@@ -160,7 +159,8 @@ int main(int argc, char** argv) {
 
     /* Calculate number of input edges visited. */
     {
-      int64_t edge_visit_count = 0;
+      shared int64_t *edge_visit_count = xUPC_Alloc_mem( sizeof( int64_t));
+			edge_visit_count = 0;
       size_t v_local;
       for (v_local = 0; v_local < g.nlocalverts; ++v_local) {
         if (pred[v_local] != -1) {
@@ -175,8 +175,8 @@ int main(int argc, char** argv) {
         }
       }
       //MPI_Allreduce(MPI_IN_PLACE, &edge_visit_count, 1, INT64_T_MPI_TYPE, MPI_SUM, MPI_COMM_WORLD);
-      upc_all_reduceI(&edge_visit_count, &edge_visit_count, UPC_SUM, THREADS, 1, NULL, sync_mode); 
-			edge_counts[bfs_root_idx] = (double)edge_visit_count;
+      upc_all_reduceI( (shared int64_t) edge_visit_count, (shared int64_t)edge_visit_count,(upc_op_t) UPC_ADD, THREADS, 1, NULL, sync_mode); 
+			edge_counts[bfs_root_idx] = (shared int64_t*)edge_visit_count;
     }
   }
 

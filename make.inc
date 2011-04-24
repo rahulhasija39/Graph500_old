@@ -1,7 +1,7 @@
 # -*- Makefile -*-
 # Copyright 2010, University of Illinois at Urbana-Champaign
 # See COPYING for license.
-CFLAGS = -g -std=c99 -Wall
+CFLAGS = -g #-std=c99 -Wall
 LDLIBS = -lm
 # OSX does not support MAP_ANON in POSIX mode and the timers for MacOSX are
 # not available for Leopard

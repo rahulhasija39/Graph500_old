@@ -12,6 +12,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include <upc.h>
 
 #define INT64_T_MPI_TYPE MPI_LONG_LONG
 
