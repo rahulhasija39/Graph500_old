@@ -12,6 +12,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
+//#include <mpi.h>
 #include <upc.h>
 
 #define INT64_T_MPI_TYPE MPI_LONG_LONG
@@ -50,7 +51,8 @@ extern "C" {
 
 void setup_globals(void); /* In utils.c */
 void free_csr_graph(csr_graph* const g); /* In utils.c */
-void* xMPI_Alloc_mem(size_t nbytes); /* In utils.c */
+//void* xMPI_Alloc_mem(size_t nbytes); /* In utils.c */
+void* xUPC_Alloc_mem(size_t nbytes); /* In utils.c */
 void* xmalloc(size_t nbytes); /* In utils.c */
 void* xcalloc(size_t n, size_t unit); /* In utils.c */
 void* xrealloc(void* p, size_t nbytes); /* In utils.c */
@@ -59,6 +61,7 @@ void convert_graph_to_csr(const int64_t nedges, const int64_t* const edges, csr_
 void find_bfs_roots(int *num_bfs_roots, const csr_graph* const g, const uint64_t seed1, const uint64_t seed2, int64_t* const bfs_roots); /* In find_roots.c */
 int validate_bfs_result(const csr_graph* const g, const int64_t root, const int64_t* const pred, const int64_t nvisited); /* In validate.c */
 
+//void run_mpi_bfs(const csr_graph* const g, int64_t root, int64_t* pred, int64_t* nvisited); /* Provided by user */
 void run_mpi_bfs(const csr_graph* const g, int64_t root, int64_t* pred, int64_t* nvisited); /* Provided by user */
 
 #ifdef __cplusplus

@@ -1,0 +1,101 @@
+cc  -pl xmt-csr/xmt-csr.pl -DUSE_MMAP_LARGE -DNDEBUG   xmt-csr/xmt-csr.c graph500.c options.c rmat.c kronecker.c verify.c prng.c xalloc.c timer.c generator/btrd_binomial_distribution.c generator/splittable_mrg.c generator/mrg_transitions.c generator/graph_generator.c generator/permutation_gen.c generator/make_graph.c generator/scramble_edges.c generator/utils.c  -lprand -lm -lrt -o xmt-csr/xmt-csr
+xmt-csr/xmt-csr.c:
+"xmt-csr/../compat.h", line 22.2: 1506-948 (W) #warning "Defining long as int64_t."
+"xmt-csr/../compat.h", line 23.14: 1506-334 (S) Identifier int64_t has already been defined on line 52 of "/usr/include/stdint.h".
+"xmt-csr/../compat.h", line 25.9: 1506-236 (W) Macro name PRId64 has been redefined.
+"xmt-csr/../compat.h", line 25.9: 1506-358 (I) "PRId64" is defined on line 129 of /usr/include/sys/inttypes.h.
+"xmt-csr/../compat.h", line 26.9: 1506-236 (W) Macro name SCNd64 has been redefined.
+"xmt-csr/../compat.h", line 26.9: 1506-358 (I) "SCNd64" is defined on line 330 of /usr/include/sys/inttypes.h.
+"xmt-csr/xmt-csr.c", line 85.11: 1506-019 (S) Expecting an array or a pointer to object type.
+"xmt-csr/xmt-csr.c", line 124.13: 1506-019 (S) Expecting an array or a pointer to object type.
+"xmt-csr/xmt-csr.c", line 180.3: 1506-019 (S) Expecting an array or a pointer to object type.
+"xmt-csr/xmt-csr.c", line 198.13: 1506-019 (S) Expecting an array or a pointer to object type.
+graph500.c:
+"compat.h", line 22.2: 1506-948 (W) #warning "Defining long as int64_t."
+"/usr/include/stdint.h", line 52.33: 1506-334 (S) Identifier int64_t has already been defined on line 23 of "compat.h".
+"graph500.c", line 19.10: 1506-296 (S) #include file <getopt.h> not found.
+"graph500.c", line 154.12: 1506-019 (S) Expecting an array or a pointer to object type.
+"graph500.c", line 191.67: 1506-019 (S) Expecting an array or a pointer to object type.
+"graph500.c", line 200.5: 1506-019 (S) Expecting an array or a pointer to object type.
+"graph500.c", line 200.59: 1506-019 (S) Expecting an array or a pointer to object type.
+"graph500.c", line 202.9: 1506-019 (S) Expecting an array or a pointer to object type.
+"graph500.c", line 204.19: 1506-019 (S) Expecting an array or a pointer to object type.
+"graph500.c", line 204.32: 1506-019 (S) Expecting an array or a pointer to object type.
+"graph500.c", line 342.13: 1506-019 (S) Expecting an array or a pointer to object type.
+"graph500.c", line 347.13: 1506-019 (S) Expecting an array or a pointer to object type.
+options.c:
+"compat.h", line 22.2: 1506-948 (W) #warning "Defining long as int64_t."
+"/usr/include/stdint.h", line 52.33: 1506-334 (S) Identifier int64_t has already been defined on line 23 of "compat.h".
+"options.c", line 16.10: 1506-296 (S) #include file <getopt.h> not found.
+"options.c", line 36.15: 1506-221 (S) Initializer must be a valid constant expression.
+"options.c", line 37.20: 1506-221 (S) Initializer must be a valid constant expression.
+rmat.c:
+"compat.h", line 22.2: 1506-948 (W) #warning "Defining long as int64_t."
+"/usr/include/stdint.h", line 52.33: 1506-334 (S) Identifier int64_t has already been defined on line 23 of "compat.h".
+"rmat.c", line 197.30: 1506-196 (W) Initialization between types "double*" and "int" is not allowed.
+kronecker.c:
+"compat.h", line 22.2: 1506-948 (W) #warning "Defining long as int64_t."
+"/usr/include/stdint.h", line 52.33: 1506-334 (S) Identifier int64_t has already been defined on line 23 of "compat.h".
+"/usr/include/inttypes.h", line 129.9: 1506-236 (W) Macro name PRId64 has been redefined.
+"/usr/include/inttypes.h", line 129.9: 1506-358 (I) "PRId64" is defined on line 25 of compat.h.
+"/usr/include/inttypes.h", line 330.9: 1506-236 (W) Macro name SCNd64 has been redefined.
+"/usr/include/inttypes.h", line 330.9: 1506-358 (I) "SCNd64" is defined on line 26 of compat.h.
+verify.c:
+"compat.h", line 22.2: 1506-948 (W) #warning "Defining long as int64_t."
+"/usr/include/stdint.h", line 52.33: 1506-334 (S) Identifier int64_t has already been defined on line 23 of "compat.h".
+prng.c:
+"compat.h", line 22.2: 1506-948 (W) #warning "Defining long as int64_t."
+"/usr/include/stdint.h", line 52.33: 1506-334 (S) Identifier int64_t has already been defined on line 23 of "compat.h".
+xalloc.c:
+"compat.h", line 22.2: 1506-948 (W) #warning "Defining long as int64_t."
+"/usr/include/stdint.h", line 52.33: 1506-334 (S) Identifier int64_t has already been defined on line 23 of "compat.h".
+"xalloc.c", line 95.27: 1506-045 (S) Undeclared identifier MAP_ANONYMOUS.
+timer.c:
+"compat.h", line 22.2: 1506-948 (W) #warning "Defining long as int64_t."
+"/usr/include/stdint.h", line 52.33: 1506-334 (S) Identifier int64_t has already been defined on line 23 of "compat.h".
+generator/btrd_binomial_distribution.c:
+generator/splittable_mrg.c:
+"generator/mod_arith_64bit.h", line 20.71: 1506-277 (S) Syntax error: possible missing ';' or ','?
+"generator/mod_arith_64bit.h", line 20.8: 1506-485 (S) Parameter declaration list is incompatible with declarator for inline.
+"generator/mod_arith_64bit.h", line 41.25: 1506-045 (S) Undeclared identifier a.
+"generator/mod_arith_64bit.h", line 41.29: 1506-045 (S) Undeclared identifier b.
+"generator/mod_arith_64bit.h", line 47.90: 1506-277 (S) Syntax error: possible missing ';' or ','?
+"generator/mod_arith_64bit.h", line 47.8: 1506-485 (S) Parameter declaration list is incompatible with declarator for inline.
+"generator/mod_arith_64bit.h", line 68.26: 1506-045 (S) Undeclared identifier sum.
+"generator/mod_arith_64bit.h", line 68.31: 1506-045 (S) Undeclared identifier a.
+"generator/mod_arith_64bit.h", line 68.34: 1506-045 (S) Undeclared identifier b.
+"generator/mod_arith_64bit.h", line 68.38: 1506-045 (S) Undeclared identifier c.
+"generator/mod_arith_64bit.h", line 68.41: 1506-045 (S) Undeclared identifier d.
+"generator/mod_arith_64bit.h", line 71.159: 1506-277 (S) Syntax error: possible missing ';' or ','?
+"generator/mod_arith_64bit.h", line 71.8: 1506-485 (S) Parameter declaration list is incompatible with declarator for inline.
+"generator/mod_arith_64bit.h", line 92.28: 1506-045 (S) Undeclared identifier sum.
+"generator/mod_arith_64bit.h", line 92.33: 1506-045 (S) Undeclared identifier a.
+"generator/mod_arith_64bit.h", line 92.36: 1506-045 (S) Undeclared identifier b.
+"generator/mod_arith_64bit.h", line 92.39: 1506-045 (S) Undeclared identifier c.
+"generator/mod_arith_64bit.h", line 92.42: 1506-045 (S) Undeclared identifier d.
+"generator/mod_arith_64bit.h", line 92.46: 1506-045 (S) Undeclared identifier e.
+"generator/mod_arith_64bit.h", line 92.49: 1506-045 (S) Undeclared identifier f.
+"generator/mod_arith_64bit.h", line 92.52: 1506-045 (S) Undeclared identifier g.
+"generator/mod_arith_64bit.h", line 92.55: 1506-045 (S) Undeclared identifier h.
+"generator/mod_arith_64bit.h", line 100.56: 1506-277 (S) Syntax error: possible missing ';' or ','?
+"generator/mod_arith_64bit.h", line 100.8: 1506-485 (S) Parameter declaration list is incompatible with declarator for inline.
+"generator/splittable_mrg.h", line 33.1: 1506-276 (S) Syntax error: possible missing '{'?
+"generator/splittable_mrg.h", line 37.3: 1506-273 (E) Missing type in declaration of mrg_state.
+"generator/splittable_mrg.h", line 40.55: 1506-277 (S) Syntax error: possible missing ')' or ','?
+"generator/splittable_mrg.h", line 43.50: 1506-277 (S) Syntax error: possible missing ')' or ','?
+generator/mrg_transitions.c:
+generator/graph_generator.c:
+generator/permutation_gen.c:
+"generator/utils.h", line 58.2: 1506-205 (S) #error "Need to define int64_t_cas() for your system"
+"generator/permutation_gen.c", line 43.116: 1506-277 (S) Syntax error: possible missing ';' or ','?
+"generator/permutation_gen.c", line 43.8: 1506-485 (S) Parameter declaration list is incompatible with declarator for inline.
+"generator/permutation_gen.c", line 46.22: 1506-045 (S) Undeclared identifier ht.
+"generator/permutation_gen.c", line 47.21: 1506-045 (S) Undeclared identifier value.
+"generator/permutation_gen.c", line 51.3: 1506-046 (S) Syntax error.
+generator/make_graph.c:
+"generator/utils.h", line 58.2: 1506-205 (S) #error "Need to define int64_t_cas() for your system"
+generator/scramble_edges.c:
+"generator/utils.h", line 58.2: 1506-205 (S) #error "Need to define int64_t_cas() for your system"
+generator/utils.c:
+"generator/utils.h", line 58.2: 1506-205 (S) #error "Need to define int64_t_cas() for your system"
+gmake: *** [xmt-csr/xmt-csr] Error 1

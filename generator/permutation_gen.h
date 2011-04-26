@@ -18,6 +18,10 @@
 #include <mpi.h>
 #endif
 
+#ifdef GRAPH_GENERATOR_UPC
+#include <upc.h>
+#endif
+
 /* This version is for sequential machines and the XMT. */
 void rand_sort_shared(mrg_state* st, int64_t n, int64_t* result /* Array of size n */);
 

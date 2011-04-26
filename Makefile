@@ -21,6 +21,10 @@ ifeq ($(BUILD_MPI), Yes)
 BIN += mpi/graph500_mpi_simple
 endif
 
+ifeq ($(BUILD_UPC), Yes)
+BIN += upc/graph500_upc
+endif
+
 ifeq ($(BUILD_XMT), Yes)
 BIN = xmt-csr/xmt-csr xmt-csr-local/xmt-csr-local
 endif
@@ -68,9 +72,13 @@ libgenerator-omp.a($(addprefix generator/,$(GENERATOR_OBJS_SEQ))): CPPFLAGS=-DGR
 mpi/graph500_mpi_simple mpi/graph500_mpi_one_sided:
 	$(MAKE) -C mpi
 
+upc/graph500_upc_simple upc/graph500_upc_one_sided:
+	$(MAKE) -C upc
+
 .PHONY:	clean
 clean:
 	rm -f libgenerator-omp.a libgenerator-seq.a \
 		generator/generator_test_seq generator/generator_test_omp \
 		$(BIN)
 	-$(MAKE) -C mpi clean
+	-$(MAKE) -C upc clean

@@ -14,8 +14,8 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-#if !defined(__MTA__)
-#include <getopt.h>
+#if !defined __MTA__
+//#include <getopt.h>
 #endif
 
 
@@ -86,7 +86,7 @@ main (int argc, char **argv)
   else
     fd = -1;
 
-  if (rootname >= 0) {
+  if (fd >= 0) {
     has_adj = xmalloc_large (nvtx_scale * sizeof (*has_adj));
     OMP("omp parallel") {
       OMP("omp for")

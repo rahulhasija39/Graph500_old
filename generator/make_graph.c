@@ -23,7 +23,9 @@
 #ifdef GRAPH_GENERATOR_OMP
 #include <omp.h>
 #endif
-
+#ifdef GRAPH_GENERATOR_UPC
+#include <upc.h>
+#endif
 /* Simplified interface to build graphs with scrambled vertices. */
 
 #include "graph_generator.h"
@@ -350,6 +352,103 @@ void make_graph(int log_numverts, int64_t desired_nedges, uint64_t userseed1, ui
   }
 }
 #endif
+
+#ifdef GRAPH_GENERATOR_UPC
+void make_graph(int log_numverts, int64_t desired_nedges, uint64_t userseed1, uint64_t userseed2, const double initiator[4], int64_t* nedges_ptr, int64_t** result_ptr) {
+  int64_t N, M;
+  int rank, size;
+
+  N = (int64_t)pow(GRAPHGEN_INITIATOR_SIZE, log_numverts);
+  M = desired_nedges;
+
+  /* Spread the two 64-bit numbers into five nonzero values in the correct
+   * range. */
+  uint_fast32_t seed[5];
+  make_mrg_seed(userseed1, userseed2, seed);
+
+	// MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+	// MPI_Comm_size(MPI_COMM_WORLD, &size);
+	rank = MYTHREAD;
+ 	size = THREADS;
+
+  int64_t nedges = compute_edge_array_size(rank, size, M);
+#ifdef GRAPHGEN_KEEP_MULTIPLICITIES
+  generated_edge* local_edges = (generated_edge*)xmalloc(nedges * sizeof(generated_edge));
+#else
+  int64_t* local_edges = (int64_t*)xmalloc(2 * nedges * sizeof(int64_t));
+#endif
+
+  //double start = MPI_Wtime();
+  double start = bupc_tick_now();
+	generate_kronecker(rank, size, seed, log_numverts, M, initiator, local_edges);
+  //double gen_time = MPI_Wtime() - start;
+	double gen_time = bupc_tick_now() - start;
+
+  int64_t* local_vertex_perm = NULL;
+
+  mrg_state state;
+  mrg_seed(&state, seed);
+  //start = MPI_Wtime();
+  start = bupc_tick_now();
+  int64_t perm_local_size;
+  //rand_sort_mpi(MPI_COMM_WORLD, &state, N, &perm_local_size, &local_vertex_perm);
+  rand_sort_upc(MPI_COMM_WORLD, &state, N, &perm_local_size, &local_vertex_perm);///////NOTE: Need to FIX, in utils.c
+  //double perm_gen_time = MPI_Wtime() - start;
+  double perm_gen_time = bupc_tick_now() - start;
+
+  /* Copy the edge endpoints into the result array if necessary. */
+  int64_t* result;
+#ifdef GRAPHGEN_KEEP_MULTIPLICITIES
+  result = (int64_t*)xmalloc(2 * nedges * sizeof(int64_t));
+  for (i = 0; i < nedges; ++i) {
+    if (local_edges[i].multiplicity != 0) {
+      result[i * 2] = local_edges[i].src;
+      result[i * 2 + 1] = local_edges[i].tgt;
+    } else {
+      result[i * 2] = result[i * 2 + 1] = (int64_t)(-1);
+    }
+  }
+  free(local_edges); local_edges = NULL;
+#else
+  result = local_edges;
+  *result_ptr = result;
+  local_edges = NULL; /* Freed by caller */
+#endif
+
+  /* Apply vertex permutation to graph. */
+  //start = MPI_Wtime();
+  start = bupc_tick_now();
+  //apply_permutation_mpi(MPI_COMM_WORLD, perm_local_size, local_vertex_perm, N, nedges, result);
+  apply_permutation_upc(MPI_COMM_WORLD, perm_local_size, local_vertex_perm, N, nedges, result);///////NOTE: Need to FIX, in utils.c
+  //double perm_apply_time = MPI_Wtime() - start;
+  double perm_apply_time = bupc_tick_now() - start;
+
+  free(local_vertex_perm); local_vertex_perm = NULL;
+
+  /* Randomly mix up the order of the edges. */
+  //start = MPI_Wtime();
+  start = bupc_tick_now();
+  int64_t* new_result;
+  int64_t nedges_out;
+  //scramble_edges_mpi(MPI_COMM_WORLD, userseed1, userseed2, nedges, result, &nedges_out, &new_result);
+  scramble_edges_upc(MPI_COMM_WORLD, userseed1, userseed2, nedges, result, &nedges_out, &new_result);///////NOTE: Need to FIX, in utils.c
+  //double edge_scramble_time = MPI_Wtime() - start;
+  double edge_scramble_time = bupc_tick_now() - start;
+
+  free(result); result = NULL;
+
+  *result_ptr = new_result;
+  *nedges_ptr = nedges_out;
+
+  if (rank == 0) {
+    fprintf(stdout, "unpermuted_graph_generation:    %f s\n", gen_time);
+    fprintf(stdout, "vertex_permutation_generation:  %f s\n", perm_gen_time);
+    fprintf(stdout, "vertex_permutation_application: %f s\n", perm_apply_time);
+    fprintf(stdout, "edge_scrambling:                %f s\n", edge_scramble_time);
+  }
+}
+#endif
+
 
 /* PRNG interface for implementations; takes seed in same format as given by
  * users, and creates a vector of doubles in a reproducible (and

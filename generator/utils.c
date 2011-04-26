@@ -27,6 +27,9 @@
 #ifdef GRAPH_GENERATOR_OMP
 #include <omp.h>
 #endif
+#ifdef GRAPH_GENERATOR_UPC
+#include <upc.h>
+#endif
 #include "utils.h"
 
 void* xmalloc(size_t n) {

@@ -56,6 +56,8 @@ extern "C" {
 /* Define if Kronecker parameters should be modified within each sub-block of
  * the adjacency matrix (like SSCA #2 does). */
 /* #define GRAPHGEN_MODIFY_PARAMS_AT_EACH_LEVEL */
+//#define GRAPH_GENERATOR_UPC
+//#define GRAPH_GENERATOR_MPI
 
 /* Size of Kronecker initiator matrix. */
 #define GRAPHGEN_INITIATOR_SIZE 2

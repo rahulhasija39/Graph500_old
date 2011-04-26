@@ -1,3 +1,5 @@
+/* -*- mode: C; mode: folding; fill-column: 70; -*- */
+/* Copyright 2010,  Georgia Institute of Technology, USA. */
 /* See COPYING for license. */
 #include "compat.h"
 #include <stdio.h>
@@ -14,7 +16,8 @@
 #include <unistd.h>
 
 #if !defined(__MTA__)
-#include <getopt.h>
+/* #include <getopt.h> */
+
 #endif
 
 #include "graph500.h"
@@ -155,7 +158,7 @@ run_bfs (void)
       if (m > 0) {
 	fprintf (stderr, "Cannot find %d sample roots of non-self degree > 0, using %d.\n",
 		 NBFS, m);
-       	NBFS = m;
+	NBFS = m;
       } else {
 	fprintf (stderr, "Cannot find any sample roots of non-self degree > 0.\n");
 	exit (EXIT_FAILURE);

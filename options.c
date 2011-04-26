@@ -10,6 +10,7 @@
 /* getopt should be in unistd.h */
 #if HAVE_UNISTD_H
 #include <unistd.h>
+#define __MTA__
 #else
 #if !defined(__MTA__)
 #include <getopt.h>

@@ -1,0 +1,15 @@
+# -*- Makefile -*-
+# Copyright 2010, Georgia Institute of Technology, USA.
+# See COPYING for license.
+# Modules and Emacs+tramp don't cooperate at PNNL.
+#PATH:=/opt/mta-pe/6.5.0/bin:${PATH}
+CFLAGS = -qlanglvl=stdc99 
+LDLIBS = -lm -lrt  -I$HOME/src/prand-1.3 #-lprand 
+#CPPFLAGS = -DUSE_MMAP_LARGE -DNDEBUG
+CPPFLAGS = -DNDEBUG
+
+BUILD_OPENMP = No
+CFLAGS_OPENMP =
+
+BUILD_XMT = NO
+

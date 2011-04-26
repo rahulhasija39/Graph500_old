@@ -16,7 +16,6 @@
 #include <string.h>
 #include <limits.h>
 
-
 /* This BFS represents its queues as bitmaps and uses some data representation
  * tricks to fit with the use of MPI one-sided operations.  It is not much
  * faster than the standard version on the machines I have tested it on, but
@@ -25,15 +24,14 @@
  * translate to UPC, Co-array Fortran, SHMEM, or GASNet since those systems are
  * more designed for one-sided remote memory operations. */
 void run_mpi_bfs(const csr_graph* const g, int64_t root, int64_t* pred, int64_t* nvisited) {
-  const size_t nlocalverts = g->nlocalverts;//why verticies that are local to this task?
-  const int64_t nglobalverts = g->nglobalverts; //total global verticies?  Is this including the verticies which are considered local to this this thread?
- 
-	int64_t nvisited_local = 0;
+  const size_t nlocalverts = g->nlocalverts;
+  const int64_t nglobalverts = g->nglobalverts;
+  int64_t nvisited_local = 0;
 
   /* Set up a second predecessor map so we can read from one and modify the
    * other. */
   int64_t* orig_pred = pred;
-  int64_t* pred2 = (int64_t*)xMPI_Alloc_mem(nlocalverts * sizeof(int64_t));//why does this point to empty memroy?
+  int64_t* pred2 = (int64_t*)xMPI_Alloc_mem(nlocalverts * sizeof(int64_t));
 
   /* The queues (old and new) are represented as bitmaps.  Each bit in the
    * queue bitmap says to check elts_per_queue_bit elements in the predecessor
@@ -43,22 +41,22 @@ void run_mpi_bfs(const csr_graph* const g, int64_t root, int64_t* pred, int64_t*
    * elements are also added to the bitmap when they were actually already
    * black.  Because of this, the predecessor map needs to be checked to be
    * sure a given vertex actually needs to be processed. */
-  const int elts_per_queue_bit = 4; //What the hell are elts? elements maybe? whats a queue_bit?
-  const int ulong_bits = sizeof(unsigned long) * CHAR_BIT; //ulong_bits, u is a what??
-  int64_t queue_nbits = (nlocalverts + elts_per_queue_bit - 1) / elts_per_queue_bit; //why is all I can really say?
-  int64_t queue_nwords = (queue_nbits + ulong_bits - 1) / ulong_bits; //why again, why not just subtract by 1?
-  unsigned long* queue_bitmap1 = (unsigned long*)xMPI_Alloc_mem(queue_nwords * sizeof(unsigned long)); 
+  const int elts_per_queue_bit = 4;
+  const int ulong_bits = sizeof(unsigned long) * CHAR_BIT;
+  int64_t queue_nbits = (nlocalverts + elts_per_queue_bit - 1) / elts_per_queue_bit;
+  int64_t queue_nwords = (queue_nbits + ulong_bits - 1) / ulong_bits;
+  unsigned long* queue_bitmap1 = (unsigned long*)xMPI_Alloc_mem(queue_nwords * sizeof(unsigned long));
   unsigned long* queue_bitmap2 = (unsigned long*)xMPI_Alloc_mem(queue_nwords * sizeof(unsigned long));
-  memset(queue_bitmap1, 0, queue_nwords * sizeof(unsigned long));//why again only bitmap1?  
+  memset(queue_bitmap1, 0, queue_nwords * sizeof(unsigned long));
 
   /* List of local vertices (used as sources in MPI_Accumulate). */
-  int64_t* local_vertices = (int64_t*)xMPI_Alloc_mem(nlocalverts * sizeof(int64_t));  //Why does it store a pointer to this int64_t*
-  {size_t i; for (i = 0; i < nlocalverts; ++i) local_vertices[i] = VERTEX_TO_GLOBAL(i);}//why the brackets?
+  int64_t* local_vertices = (int64_t*)xMPI_Alloc_mem(nlocalverts * sizeof(int64_t));
+  {size_t i; for (i = 0; i < nlocalverts; ++i) local_vertices[i] = VERTEX_TO_GLOBAL(i);}
 
   /* List of all bit masks for an unsigned long (used as sources in
    * MPI_Accumulate). */
   unsigned long masks[ulong_bits];
-  {int i; for (i = 0; i < ulong_bits; ++i) masks[i] = (1UL << i);}//why the brackets?
+  {int i; for (i = 0; i < ulong_bits; ++i) masks[i] = (1UL << i);}
 
   /* Coding of predecessor map: */
   /* - White (not visited): INT64_MAX */
@@ -66,7 +64,7 @@ void run_mpi_bfs(const csr_graph* const g, int64_t root, int64_t* pred, int64_t*
   /* - Black (done): -nglobalverts .. -1 */
 
   /* Set initial predecessor map. */
-  {size_t i; for (i = 0; i < nlocalverts; ++i) pred[i] = INT64_MAX;}//Again Why?
+  {size_t i; for (i = 0; i < nlocalverts; ++i) pred[i] = INT64_MAX;}
 
   /* Mark root as grey and add it to the queue. */
   if (VERTEX_OWNER(root) == rank) {

@@ -16,6 +16,7 @@
 #include <stddef.h>
 #include <string.h>
 
+
 /* Find num_bfs_roots random vertices, each of which has degree >= 1, with the
  * same answer produced on all nodes. */
 void find_bfs_roots(int* num_bfs_roots, const csr_graph* const g, const uint64_t seed1, const uint64_t seed2, int64_t* const bfs_roots) {

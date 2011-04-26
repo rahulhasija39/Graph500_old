@@ -8,9 +8,7 @@
 /*           Andrew Lumsdaine                                              */
 
 #include "common.h"
-//#include <mpi.h>
-#include <upc.h>
-#include <upc_collective.h>
+#include <mpi.h>
 #include <stdint.h>
 #include <inttypes.h>
 #include <stdlib.h>
@@ -80,9 +78,7 @@ static void clear_adj_list(adjacency_list* al) {
 }
 
 void convert_graph_to_csr(const int64_t nedges, const int64_t* const edges, csr_graph* const g) {
-  
-	upc_flag_t sync_mode = UPC_IN_MYSYNC | UPC_OUT_MYSYNC;
-	adjacency_list adj_list = {0, 0, NULL}; /* Adjacency list being built up with
+  adjacency_list adj_list = {0, 0, NULL}; /* Adjacency list being built up with
                                            * received data */
   {
     /* Redistribute each input undirected edge (a, b) to create two directed
@@ -92,11 +88,11 @@ void convert_graph_to_csr(const int64_t nedges, const int64_t* const edges, csr_
     /* Note that these buffers are edge pairs (src, tgt), where both elements
      * are global vertex indexes. */
     int64_t* recvbuf = (int64_t*)xmalloc(edge_buffer_size * 2 * sizeof(int64_t));
-  //  MPI_Request recvreq;
+    MPI_Request recvreq;
     int recvreq_active = 0;
     int64_t* coalescing_buf = (int64_t*)xmalloc(size * edge_buffer_size * 2 * sizeof(int64_t));
     size_t* coalescing_counts = (size_t*)xcalloc(size, sizeof(size_t)); /* Uses zero-init */
-  //  MPI_Request* sendreqs = (MPI_Request*)xmalloc(size * sizeof(MPI_Request));
+    MPI_Request* sendreqs = (MPI_Request*)xmalloc(size * sizeof(MPI_Request));
     int* sendreqs_active = (int*)xcalloc(size, sizeof(int)); /* Uses zero-init */
     int num_sendreqs_active = 0;
     int num_senders_done = 1; /* Number of ranks that have said that they will
@@ -105,10 +101,10 @@ void convert_graph_to_csr(const int64_t nedges, const int64_t* const edges, csr_
 
     /* The heavy use of macros here is to create the equivalent of nested
      * functions with proper access to variables from the enclosing scope. */
-/*
+
 #define PROCESS_EDGE(src, tgt) \
- /*   /* Do the handling for one received edge. */ \
-  /*  do { \
+    /* Do the handling for one received edge. */ \
+    do { \
       assert (VERTEX_OWNER((src)) == rank); \
       add_adj_list_edge(&adj_list, VERTEX_LOCAL((src)), (tgt)); \
     } while (0)
@@ -116,7 +112,7 @@ void convert_graph_to_csr(const int64_t nedges, const int64_t* const edges, csr_
 #define START_IRECV \
     /* Start/restart the receive operation to wait for blocks of edges, if
      * needed. */ \
-   /* do { \
+    do { \
       if (num_senders_done < size) { \
         MPI_Irecv(recvbuf, edge_buffer_size * 2, INT64_T_MPI_TYPE, MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &recvreq); \
         recvreq_active = 1; \
@@ -126,23 +122,23 @@ void convert_graph_to_csr(const int64_t nedges, const int64_t* const edges, csr_
 #define PROCESS_REQS \
     /* Handle all outstanding MPI requests and progress the MPI implementation.
      * */ \
-  /*  do { \
+    do { \
       int flag; \
       /* Test receive request. */ \
-   /*   while (recvreq_active) { \
+      while (recvreq_active) { \
         MPI_Status st; \
         MPI_Test(&recvreq, &flag, &st); \
         if (!flag) break; \
         /* A message arrived. */ \
-   /*     recvreq_active = 0; \
+        recvreq_active = 0; \
         int count; \
         MPI_Get_count(&st, INT64_T_MPI_TYPE, &count); \
         count /= 2; \
-        if (count == 0 /* This count is used as a flag when each sender is done *//* ) { \
-  /*        ++num_senders_done; \
+        if (count == 0 /* This count is used as a flag when each sender is done */ ) { \
+          ++num_senders_done; \
         } else { \
           /* Process the edges in the received message. */ \
-   /*       int c; \
+          int c; \
           for (c = 0; c < count; ++c) { \
             PROCESS_EDGE(recvbuf[c * 2], recvbuf[c * 2 + 1]); \
           } \
@@ -151,7 +147,7 @@ void convert_graph_to_csr(const int64_t nedges, const int64_t* const edges, csr_
       } \
       /* Test send requests to determine when their buffers are available for
        * reuse. */ \
-      /*int c; \
+      int c; \
       for (c = 0; c < size; ++c) { \
         if (sendreqs_active[c]) { \
           MPI_Test(&sendreqs[c], &flag, MPI_STATUS_IGNORE); \
@@ -165,16 +161,16 @@ void convert_graph_to_csr(const int64_t nedges, const int64_t* const edges, csr_
       int dest = VERTEX_OWNER((src)); \
       if (dest == rank) { \
         /* Process self-sends locally. */ \
-     /*   PROCESS_EDGE((src), (tgt)); \
+        PROCESS_EDGE((src), (tgt)); \
       } else { \
         while (sendreqs_active[dest]) PROCESS_REQS; /* Wait for send buffer to be available */ \
         /* Push onto coalescing buffer. */ \
-      /*  size_t c = coalescing_counts[dest]; \
+        size_t c = coalescing_counts[dest]; \
         coalescing_buf[dest * edge_buffer_size * 2 + c * 2] = (src); \
         coalescing_buf[dest * edge_buffer_size * 2 + c * 2 + 1] = (tgt); \
         ++coalescing_counts[dest]; \
         /* Send if the buffer is full. */ \
-   /*     if (coalescing_counts[dest] == edge_buffer_size) { \
+        if (coalescing_counts[dest] == edge_buffer_size) { \
           FLUSH_COALESCING_BUFFER(dest); \
         } \
       } \
@@ -184,11 +180,11 @@ void convert_graph_to_csr(const int64_t nedges, const int64_t* const edges, csr_
     do { \
       while (sendreqs_active[(dest)]) PROCESS_REQS; /* Wait for previous sends to finish */ \
       /* Ssend plus only having one request to a given destination active at a time should act as flow control. */ \
-    /*  MPI_Issend(coalescing_buf + (dest) * edge_buffer_size * 2, coalescing_counts[(dest)] * 2, INT64_T_MPI_TYPE, (dest), 0, MPI_COMM_WORLD, &sendreqs[(dest)]); \
+      MPI_Issend(coalescing_buf + (dest) * edge_buffer_size * 2, coalescing_counts[(dest)] * 2, INT64_T_MPI_TYPE, (dest), 0, MPI_COMM_WORLD, &sendreqs[(dest)]); \
       sendreqs_active[(dest)] = 1; \
       ++num_sendreqs_active; \
       /* Clear the buffer for the next user. */ \
- /*     coalescing_counts[(dest)] = 0; \
+      coalescing_counts[(dest)] = 0; \
     } while (0)
 
     START_IRECV;
@@ -201,7 +197,7 @@ void convert_graph_to_csr(const int64_t nedges, const int64_t* const edges, csr_
       SEND(edges[i * 2 + 0], edges[i * 2 + 1]);
       if (edges[i * 2 + 0] != edges[i * 2 + 1]) {
         /* Only send reverse for non-self-loops. */
-  /*      SEND(edges[i * 2 + 1], edges[i * 2 + 0]);
+        SEND(edges[i * 2 + 1], edges[i * 2 + 0]);
       }
     }
     int offset;
@@ -209,11 +205,11 @@ void convert_graph_to_csr(const int64_t nedges, const int64_t* const edges, csr_
       int dest = MOD_SIZE(rank + offset);
       if (coalescing_counts[dest] != 0) {
         /* Send actual data, if any. */
-   /*     FLUSH_COALESCING_BUFFER(dest);
+        FLUSH_COALESCING_BUFFER(dest);
       }
       /* Send empty message to indicate that we won't send anything else to
        * this rank (takes advantage of MPI non-overtaking rules). */
-/*      FLUSH_COALESCING_BUFFER(dest);
+      FLUSH_COALESCING_BUFFER(dest);
     }
     while (num_senders_done < size || num_sendreqs_active > 0) PROCESS_REQS;
     free(recvbuf);
@@ -229,13 +225,11 @@ void convert_graph_to_csr(const int64_t nedges, const int64_t* const edges, csr_
 #undef START_IRECV
 
   }
-*/
+
   /* Compute global number of vertices and count the degrees of the local
    * vertices. */
-  //int64_t nverts_known = 0; /* We only count vertices touched by at least one
-   shared int64_t *nverts_known = xUPC_Allocate_mem( sizeof( int64_t)); 
-		nverts_known = 0;
-														/* edge, and because of edge doubling each vertex
+  int64_t nverts_known = 0; /* We only count vertices touched by at least one
+                             * edge, and because of edge doubling each vertex
                              * incident to an edge must be the target of some
                              * copy of that edge. */
   size_t nlocalverts_orig = adj_list.nvertices;
@@ -252,17 +246,12 @@ void convert_graph_to_csr(const int64_t nedges, const int64_t* const edges, csr_
     }
     degrees[i] = deg;
   }
-  //int64_t nglobalverts = 0;
-  shared int64_t * nglobalverts = xUPC_Alloc_mem( sizeof( int64_t));
-	nglobalverts = 0;	
-	// MPI_Allreduce(&nverts_known, &nglobalverts, 1, INT64_T_MPI_TYPE, MPI_MAX, MPI_COMM_WORLD);
-  upc_all_reduceI( (shared int64_t*)nverts_known, (shared int64_t*) nglobalverts, (upc_op_t) UPC_MAX, THREADS, 1,NULL, sync_mode);
+  int64_t nglobalverts = 0;
+  MPI_Allreduce(&nverts_known, &nglobalverts, 1, INT64_T_MPI_TYPE, MPI_MAX, MPI_COMM_WORLD);
   g->nglobalverts = nglobalverts;
   /* Compute the final number of local vertices based on the global maximum
    * vertex number. */
-  int64_t lnglobalverts = (int64_t) nglobalverts;
-	size_t nlocalverts = VERTEX_LOCAL(lnglobalverts + size - 1 - rank);
-	
+  size_t nlocalverts = VERTEX_LOCAL(nglobalverts + size - 1 - rank);
   g->nlocalverts = nlocalverts;
   grow_adj_list(&adj_list, nlocalverts);
 
@@ -290,4 +279,4 @@ void convert_graph_to_csr(const int64_t nedges, const int64_t* const edges, csr_
   }
   free(degrees); degrees = NULL;
   clear_adj_list(&adj_list);
-}}
+}

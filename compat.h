@@ -7,7 +7,9 @@
 #define _FILE_OFFSET_BITS 64
 #define _THREAD_SAFE
 #define _XOPEN_SOURCE 600
+#ifndef _XOPEN_SOURCE_EXTENDED
 #define _XOPEN_SOURCE_EXTENDED
+#endif
 #define _SVID_SOURCE
 
 #if __STDC_VERSION__ >= 199901L
@@ -41,5 +43,8 @@ static int omp_get_num_threads (void) { return 1; }
 #else
 #define MTA(x)
 #endif
+
+#define HAVE_UNISTD_H 1
+#define HAVE_ALLOCA_H 1
 
 #endif /* COMPAT_HEADER_ */
